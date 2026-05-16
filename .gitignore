@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment files
+.env
+
+# Executables
+*.exe
+*.swf
+*.air
+*.ipa
+*.apk
+
+# Logs
+*.log
+
+# IDE files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.user
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Other
+*.tmp
+*.bak
+query

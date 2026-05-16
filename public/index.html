@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>高速公路远端值守系统</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="authModal" class="auth-modal">
+    <div class="auth-container">
+      <div class="auth-header">
+        <h2>高速公路远端值守系统</h2>
+        <p>请登录系统</p>
+      </div>
+      
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="loginTab">登录</button>
+        <button class="auth-tab" id="registerTab">注册</button>
+      </div>
+
+      <div class="auth-form" id="loginForm">
+        <div class="form-group">
+          <label>用户名</label>
+          <input type="text" id="loginUsername" placeholder="请输入用户名">
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" id="loginPassword" placeholder="请输入密码">
+        </div>
+        <button class="auth-btn" id="loginBtn">登录</button>
+        <div class="auth-hint">默认账号: admin / admin123</div>
+      </div>
+
+      <div class="auth-form" id="registerForm" style="display: none;">
+        <div class="form-group">
+          <label>用户名</label>
+          <input type="text" id="registerUsername" placeholder="请输入用户名">
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" id="registerPassword" placeholder="请输入密码">
+        </div>
+        <div class="form-group">
+          <label>邮箱</label>
+          <input type="email" id="registerEmail" placeholder="请输入邮箱">
+        </div>
+        <div class="form-group">
+          <label>角色</label>
+          <select id="registerRole">
+            <option value="operator">操作员</option>
+            <option value="admin">管理员</option>
+          </select>
+        </div>
+        <button class="auth-btn" id="registerBtn">注册</button>
+      </div>
+
+      <div class="auth-message" id="authMessage"></div>
+    </div>
+  </div>
+
+  <div class="container" id="mainContainer" style="display: none;">
+    <header class="header">
+      <h1>高速公路远端值守系统</h1>
+      <div class="header-info">
+        <span class="status online">系统运行中</span>
+        <span class="user-info" id="currentUser"></span>
+        <button class="logout-btn" id="logoutBtn">退出登录</button>
+        <span class="time" id="currentTime"></span>
+      </div>
+    </header>
+
+    <nav class="nav">
+      <button class="nav-btn active" data-tab="dashboard">仪表盘</button>
+      <button class="nav-btn" data-tab="devices">设备管理</button>
+      <button class="nav-btn" data-tab="license-plates">车牌识别</button>
+      <button class="nav-btn" data-tab="calls">通话中心</button>
+      <button class="nav-btn" data-tab="alarms">告警中心</button>
+      <button class="nav-btn" data-tab="logs">系统日志</button>
+      <button class="nav-btn" data-tab="users">用户管理</button>
+    </nav>
+
+    <main class="main-content">
+      <div id="dashboard" class="tab-content active">
+        <div class="stats-grid">
+          <div class="stat-card total-devices">
+            <div class="stat-icon">📦</div>
+            <div class="stat-info">
+              <div class="stat-value" id="totalDevices">0</div>
+              <div class="stat-label">设备总数</div>
+            </div>
+          </div>
+          <div class="stat-card online-devices">
+            <div class="stat-icon">🟢</div>
+            <div class="stat-info">
+              <div class="stat-value" id="onlineDevices">0</div>
+              <div class="stat-label">在线设备</div>
+            </div>
+          </div>
+          <div class="stat-card warning-devices">
+            <div class="stat-icon">🟡</div>
+            <div class="stat-info">
+              <div class="stat-value" id="warningDevices">0</div>
+              <div class="stat-label">异常设备</div>
+            </div>
+          </div>
+          <div class="stat-card active-alarms">
+            <div class="stat-icon">🔴</div>
+            <div class="stat-info">
+              <div class="stat-value" id="activeAlarms">0</div>
+              <div class="stat-label">活动告警</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dashboard-grid">
+          <div class="panel device-panel">
+            <h3>设备状态概览</h3>
+            <div class="device-list" id="deviceList"></div>
+          </div>
+          <div class="panel alarm-panel">
+            <h3>最新告警</h3>
+            <div class="alarm-list" id="recentAlarms"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="devices" class="tab-content">
+        <div class="search-bar">
+          <input type="text" id="deviceSearch" placeholder="搜索设备名称或位置...">
+          <select id="deviceStatus">
+            <option value="all">全部状态</option>
+            <option value="online">在线</option>
+            <option value="offline">离线</option>
+            <option value="warning">异常</option>
+          </select>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>设备ID</th>
+              <th>设备名称</th>
+              <th>类型</th>
+              <th>位置</th>
+              <th>状态</th>
+              <th>CPU</th>
+              <th>内存</th>
+              <th>温度</th>
+              <th>更新时间</th>
+            </tr>
+          </thead>
+          <tbody id="devicesTableBody"></tbody>
+        </table>
+      </div>
+
+      <div id="alarms" class="tab-content">
+        <div class="alarm-filters">
+          <select id="alarmLevel">
+            <option value="all">全部级别</option>
+            <option value="low">低</option>
+            <option value="medium">中</option>
+            <option value="high">高</option>
+            <option value="critical">严重</option>
+          </select>
+          <select id="alarmStatus">
+            <option value="all">全部状态</option>
+            <option value="active">活动</option>
+            <option value="acknowledged">已确认</option>
+            <option value="resolved">已解决</option>
+          </select>
+        </div>
+        <div class="alarm-cards" id="alarmCards"></div>
+      </div>
+
+      <div id="license-plates" class="tab-content">
+        <div class="search-bar">
+          <input type="text" id="plateSearch" placeholder="搜索车牌号...">
+          <select id="plateDirection">
+            <option value="all">全部方向</option>
+            <option value="in">入口</option>
+            <option value="out">出口</option>
+          </select>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card plate-total">
+            <div class="stat-icon">🚗</div>
+            <div class="stat-info">
+              <div class="stat-value" id="totalPlates">0</div>
+              <div class="stat-label">识别总数</div>
+            </div>
+          </div>
+          <div class="stat-card plate-in">
+            <div class="stat-icon">➡️</div>
+            <div class="stat-info">
+              <div class="stat-value" id="inPlates">0</div>
+              <div class="stat-label">入口车辆</div>
+            </div>
+          </div>
+          <div class="stat-card plate-out">
+            <div class="stat-icon">⬅️</div>
+            <div class="stat-info">
+              <div class="stat-value" id="outPlates">0</div>
+              <div class="stat-label">出口车辆</div>
+            </div>
+          </div>
+          <div class="stat-card plate-pending">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-info">
+              <div class="stat-value" id="pendingPlates">0</div>
+              <div class="stat-label">待审核</div>
+            </div>
+          </div>
+        </div>
+        <div class="camera-section">
+          <h3>摄像头识别</h3>
+          <div class="camera-container">
+            <div class="video-wrapper">
+              <video id="cameraFeed" autoplay playsinline></video>
+              <canvas id="cameraCanvas" style="display: none;"></canvas>
+            </div>
+            <div class="camera-controls">
+              <button id="startCamera" class="camera-btn">开启摄像头</button>
+              <button id="capturePlate" class="camera-btn capture-btn" disabled>拍照识别</button>
+              <button id="stopCamera" class="camera-btn stop-btn" disabled>关闭摄像头</button>
+            </div>
+          </div>
+        </div>
+        <div class="real-time-section">
+          <h3>实时识别</h3>
+          <div class="real-time-plate" id="realTimePlate">
+            <div class="plate-placeholder">等待识别...</div>
+          </div>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>车牌号</th>
+              <th>设备</th>
+              <th>方向</th>
+              <th>置信度</th>
+              <th>状态</th>
+              <th>时间</th>
+            </tr>
+          </thead>
+          <tbody id="platesTableBody"></tbody>
+        </table>
+      </div>
+
+      <div id="calls" class="tab-content">
+        <div class="calls-container">
+          <div class="call-stats">
+            <div class="stat-card call-total">
+              <div class="stat-icon">📞</div>
+              <div class="stat-info">
+                <div class="stat-value" id="totalCalls">0</div>
+                <div class="stat-label">通话总数</div>
+              </div>
+            </div>
+            <div class="stat-card call-today">
+              <div class="stat-icon">📅</div>
+              <div class="stat-info">
+                <div class="stat-value" id="todayCalls">0</div>
+                <div class="stat-label">今日通话</div>
+              </div>
+            </div>
+            <div class="stat-card call-answered">
+              <div class="stat-icon">✅</div>
+              <div class="stat-info">
+                <div class="stat-value" id="answeredCalls">0</div>
+                <div class="stat-label">已接听</div>
+              </div>
+            </div>
+            <div class="stat-card call-missed">
+              <div class="stat-icon">❌</div>
+              <div class="stat-info">
+                <div class="stat-value" id="missedCalls">0</div>
+                <div class="stat-label">未接听</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="active-call-section">
+            <h3>当前通话</h3>
+            <div class="active-call" id="activeCall">
+              <div class="no-call">暂无通话</div>
+            </div>
+          </div>
+
+          <div class="call-controls">
+            <h3>发起呼叫</h3>
+            <div class="call-input-group">
+              <label>选择设备:</label>
+              <select id="callDevice">
+                <option value="">请选择设备</option>
+              </select>
+            </div>
+            <div class="call-input-group">
+              <label>联系人:</label>
+              <input type="text" id="callContact" placeholder="输入联系人名称">
+            </div>
+            <button class="call-btn" id="makeCallBtn">发起呼叫</button>
+            <button class="call-btn simulate-btn" id="simulateCallBtn">模拟来电</button>
+          </div>
+
+          <h3>通话记录</h3>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>呼叫者</th>
+                <th>接收者</th>
+                <th>类型</th>
+                <th>状态</th>
+                <th>时长</th>
+                <th>时间</th>
+              </tr>
+            </thead>
+            <tbody id="callsTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="logs" class="tab-content">
+        <div class="log-filters">
+          <select id="logType">
+            <option value="all">全部类型</option>
+            <option value="info">信息</option>
+            <option value="warning">警告</option>
+            <option value="error">错误</option>
+            <option value="alarm">告警</option>
+            <option value="system">系统</option>
+          </select>
+        </div>
+        <div class="log-list" id="logList"></div>
+      </div>
+
+      <div id="users" class="tab-content">
+        <div class="search-bar">
+          <input type="text" id="userSearch" placeholder="搜索用户名或邮箱...">
+        </div>
+        <button class="add-user-btn" id="addUserBtn">添加用户</button>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>用户ID</th>
+              <th>用户名</th>
+              <th>邮箱</th>
+              <th>角色</th>
+              <th>状态</th>
+              <th>创建时间</th>
+              <th>最后登录</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody"></tbody>
+        </table>
+      </div>
+      <div><img src="https://tool.lu/netcard/"></div>
+    </main>
+  </div>
+
+  <div id="userModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <span class="close-modal" id="closeUserModal">&times;</span>
+      <h3 id="userModalTitle">添加用户</h3>
+      <form id="userForm">
+        <input type="hidden" id="userId">
+        <div class="form-group">
+          <label>用户名</label>
+          <input type="text" id="userUsername" required>
+        </div>
+        <div class="form-group">
+          <label>密码</label>
+          <input type="password" id="userPassword" placeholder="不填则不修改密码">
+        </div>
+        <div class="form-group">
+          <label>邮箱</label>
+          <input type="email" id="userEmail" required>
+        </div>
+        <div class="form-group">
+          <label>角色</label>
+          <select id="userRole">
+            <option value="operator">操作员</option>
+            <option value="admin">管理员</option>
+          </select>
+        </div>
+        <button type="submit" class="modal-btn">保存</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
